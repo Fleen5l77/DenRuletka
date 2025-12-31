@@ -576,9 +576,12 @@ function submitCode() {
             showAlert('Неверная структура данных в коде.');
             return;
         }
-        if (recipientId !== ROULETTE_ADDRESS) {
-            resultDiv.innerText = `Код предназначен для ${recipientId}, а не для ${ROULETTE_ADDRESS}.`;
-            showAlert(`Код предназначен для ${recipientId}.`);
+        // Сравнение адреса делаем регистронезависимым и без лишних пробелов
+        const normalizedRecipient = String(recipientId).trim().toLowerCase();
+        const expectedRecipient = String(ROULETTE_ADDRESS).trim().toLowerCase();
+        if (normalizedRecipient !== expectedRecipient) {
+            resultDiv.innerText = `Код предназначен для ${recipientId}. Для зачисления нужен адрес: ${ROULETTE_ADDRESS} (регистр не важен).`;
+            showAlert(`Неверный адрес назначения. Ожидаемый адрес: ${ROULETTE_ADDRESS} (регистр игнорируется).`);
             return;
         }
         if (codePassword !== password) {
