@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DenisCombat Roulette - Игра</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="top-decor">
+        <div class="garland" aria-hidden="true">
+            <span class="bulb">🎄</span>
+            <span class="bulb">✨</span>
+            <span class="bulb">🎁</span>
+            <span class="bulb">❄️</span>
+            <span class="bulb">🎆</span>
+        </div>
+    </div>
+
+    <header class="neon">
+        <h1><span class="spark">✨</span> DENKOIN ROULETTE<span class="spark">✨</span></h1>
+    </header>
+
+    <div class="top-row">
+        <div id="coinBalance" class="balance">Баланс: <span id="balanceAmount">0</span> 💠</div>
+        <div class="bet-controls">
+            <label for="betInput">Ставка</label>
+            <div class="bet-row">
+                <input id="betInput" type="number" min="1" value="1000">
+                <div class="presets">
+                    <button class="preset" data-mult="1">x1</button>
+                    <button class="preset" data-mult="2">x2</button>
+                    <button class="preset" data-mult="max">MAX</button>
+                </div>
+            </div>
+            <small id="spinLimit" class="muted">Лимит спинов: 5/день</small>
+        </div>
+    </div>
+
+    <nav>
+        <a href="index.html">Главная</a>
+        <a href="deposit.html">Пополнить</a>
+        <a href="withdraw.html">Вывести</a>
+        <a href="game.html">Играть</a>
+    </nav>
+
+    <div class="game-selector">
+        <button class="game-tab active" data-game="roulette">Рулетка</button>
+        <button class="game-tab" data-game="coinflip">Монетка</button>
+        <button class="game-tab" data-game="slots">Слоты</button>
+    </div>
+
+    <div class="game-area">
+        <div id="rouletteGame" class="game-panel">
+            <canvas id="roulette" width="360" height="360"></canvas>
+            <div class="side">
+                <button id="spinButton" class="spin">КРУТИТЬ</button>
+                <div id="bigResult" class="big-result">Сделай ставку и крути!</div>
+                <div id="result" class="muted small">Шансы отображаются при наведении на сегмент</div>
+            </div>
+        </div>
+
+        <div id="coinFlipGame" class="game-panel hidden">
+            <div class="side">
+                <label>Выберите сторону</label>
+                <div class="coin-choices">
+                    <button class="coin-choice active" data-choice="heads">Орёл</button>
+                    <button class="coin-choice" data-choice="tails">Решка</button>
+                </div>
+                <button id="flipButton" class="spin">БРОСИТЬ</button>
+                <div id="coinFlipResult" class="big-result">Сделай ставку и выбери сторону</div>
+            </div>
+        </div>
+
+        <div id="slotsGame" class="game-panel hidden">
+            <div class="slots-wrap">
+                <div class="reel" id="reel1">🍒</div>
+                <div class="reel" id="reel2">🍋</div>
+                <div class="reel" id="reel3">🔔</div>
+            </div>
+            <div class="side">
+                <button id="slotsButton" class="spin">КРУТИТЬ СЛОТЫ</button>
+                <div id="slotsResult" class="big-result">Попробуй сорвать джекпот!</div>
+            </div>
+        </div>
+
+        <div class="history side">
+            <strong>История:</strong>
+            <ul id="historyList"></ul>
+        </div>
+    </div>
+
+    <canvas id="confetti" class="confetti"></canvas>
+
+    <!-- New Year snow overlay (canvas for random tilted flakes) -->
+    <canvas id="snowCanvas" class="snow" aria-hidden="true"></canvas>
+
+    <!-- Sounds -->
+    <audio id="winSound" src="assets/win.mp3"></audio>
+    <audio id="loseSound" src="assets/lose.mp3"></audio>
+
+    <script src="scripts.js"></script>
+</body>
+</html>

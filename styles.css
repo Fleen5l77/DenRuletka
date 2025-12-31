@@ -1,0 +1,98 @@
+:root{
+    --bg:#0f0f1a; --neon1:#00ffd5; --neon2:#ff2d95; --accent:#ffd166; --muted:#aaa;
+}
+*{box-sizing:border-box}
+body{
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    margin:0; padding:20px; min-height:100vh;
+    background: radial-gradient(circle at 10% 10%, #111128 0%, #0a0a0f 35%, #05050a 100%);
+    color:#eaeef7; display:flex; flex-direction:column; align-items:center; gap:16px;
+}
+header.neon h1{font-size:28px; margin:0; text-align:center; letter-spacing:1px; color:var(--neon1); text-shadow:0 0 8px rgba(0,255,213,0.2), 0 0 18px rgba(255,45,149,0.08);}
+header.neon .tag{color:var(--muted); text-align:center; margin-top:6px}
+.top-row{width:100%; max-width:980px; display:flex; gap:20px; align-items:center; justify-content:space-between}
+.balance{font-size:20px; background:linear-gradient(90deg,#0ff 0%, #f2a 100%); -webkit-background-clip:text; color:transparent; font-weight:700}
+.bet-controls{display:flex; flex-direction:column; align-items:flex-end; gap:6px}
+.bet-row{display:flex; gap:8px; align-items:center}
+#betInput{width:130px; padding:10px; border-radius:8px; border:none; font-size:16px}
+.presets .preset{background:linear-gradient(90deg,var(--neon2), #ff9ec2); color:#111; border:none; padding:8px 10px; border-radius:8px; cursor:pointer}
+nav{display:flex; gap:10px}
+nav a{padding:8px 14px; background:linear-gradient(90deg,#222 0%, #111 100%); color:var(--muted); text-decoration:none; border-radius:8px; border:1px solid rgba(255,255,255,0.03)}
+nav a:hover{color:#fff}
+.game-area{width:100%; max-width:980px; display:flex; gap:24px; align-items:flex-start}
+canvas#roulette{border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.6); background:conic-gradient(#111,#111); width:360px; height:360px}
+.side{flex:1; display:flex; flex-direction:column; gap:12px}
+.spin{font-size:22px; padding:16px; border-radius:14px; border:none; cursor:pointer; background:linear-gradient(90deg,var(--neon1),var(--neon2)); color:#050505; box-shadow:0 6px 20px rgba(0,0,0,0.6), 0 0 18px rgba(0,255,213,0.18); animation:pulse 1.2s infinite}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+.big-result{padding:14px; border-radius:10px; background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); color:#fff; font-weight:700; text-align:center}
+.big-result.win{box-shadow:0 6px 30px rgba(0,255,140,0.08); border:1px solid rgba(0,255,140,0.12); color:var(--neon1)}
+.big-result.lose{box-shadow:0 6px 30px rgba(255,0,40,0.06); border:1px solid rgba(255,0,40,0.12); color:#ff6b6b}
+.muted{color:var(--muted)}
+.history{background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:10px; border-radius:8px; max-height:180px; overflow:auto}
+.history ul{margin:8px 0 0 12px; padding:0}
+.history li{list-style:circle; margin:6px 0; color:var(--muted)}
+.confetti{position:fixed; left:0; top:0; pointer-events:none; width:100%; height:100%; z-index:999}
+.small{font-size:13px}
+footer{color:var(--muted); margin-top:20px}
+
+/* Responsive */
+@media (max-width:880px){
+    .game-area{flex-direction:column; align-items:center}
+    canvas#roulette{width:300px;height:auto}
+}
+
+/* ADHD / zoomer extras */
+.neon-flicker{animation:flicker 3s infinite}
+@keyframes flicker{0%,100%{opacity:1}50%{opacity:0.8}}
+
+/* Game selector */
+.game-selector{display:flex; gap:10px; align-items:center}
+.game-tab{padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--muted); cursor:pointer}
+.game-tab.active{background:linear-gradient(90deg,var(--neon1),var(--neon2)); color:#050505; box-shadow:0 6px 20px rgba(0,0,0,0.6)}
+
+.game-panel{display:flex; gap:16px; align-items:center}
+.hidden{display:none}
+
+/* Coin flip */
+.coin-choices{display:flex; gap:8px; margin:10px 0}
+.coin-choice{padding:8px 12px; border-radius:8px; border:none; cursor:pointer; background:linear-gradient(90deg,#444,#222); color:#fff}
+.coin-choice.active{outline:3px solid rgba(255,255,255,0.06); box-shadow:0 6px 20px rgba(0,0,0,0.6)}
+
+/* Slots */
+.slots-wrap{display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px}
+.reel{width:86px; height:86px; border-radius:10px; background:linear-gradient(90deg,#111,#1a1a2b); display:flex; align-items:center; justify-content:center; font-size:34px; box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+
+/* New Year decorations */
+.top-decor{width:100%; display:flex; justify-content:center; margin-bottom:6px}
+.garland{display:flex; gap:8px; align-items:center; transform:translateY(0)}
+.garland .bulb{display:inline-block; font-size:18px; transform-origin:center; animation:bulb 3s ease-in-out infinite}
+@keyframes bulb{0%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-6deg)}100%{transform:translateY(0) rotate(0)}}
+.spark{opacity:0.9}
+
+/* Snow overlay */
+.snow{position:fixed; left:-10%; top:-10%; width:120%; height:120%; pointer-events:none; z-index:997; opacity:0.75; mix-blend-mode:screen; transform-origin:center; transform:rotate(-8deg);}
+/* fallback background for very old browsers */
+.snow.fallback{background-image: radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px); background-size: 16px 16px; animation:snow 18s linear infinite}
+@keyframes snow{from{background-position:0 -2000px}to{background-position:0 0}}
+
+/* Mobile / small screens adaptations */
+@media (max-width: 600px){
+    header.neon h1{font-size:20px}
+    .top-row{flex-direction:column; align-items:center; gap:8px}
+    .bet-controls{align-items:center; width:100%}
+    #betInput{width:70vw}
+    .game-area{flex-direction:column}
+    .game-panel{flex-direction:column; align-items:center}
+    canvas#roulette{width:90vw; height:auto}
+    .side{width:100%; display:flex; flex-direction:column; gap:8px}
+    .spin{width:100%; padding:2px; font-size:18px}
+    .history{display:none}
+    .reel{width:68px; height:68px; font-size:28px}
+    .big-result{font-size:16px}
+    nav{flex-wrap:wrap; gap:6px}
+    .garland .bulb{font-size:16px}
+    .snow{background-size:8px 8px}
+}
+
+/* utility */
+button:disabled{opacity:0.5; cursor:not-allowed}

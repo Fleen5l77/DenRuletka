@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DenisCombat Roulette - Пополнение</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="top-decor">
+        <div class="garland" aria-hidden="true">
+            <span class="bulb">🎄</span>
+            <span class="bulb">✨</span>
+            <span class="bulb">🎁</span>
+            <span class="bulb">❄️</span>
+            <span class="bulb">🎆</span>
+        </div>
+    </div>
+
+    <header class="neon">
+        <h1>✨ Пополнение баланса</h1>
+        <p class="tag">Внеси DenCoins через код — проверь формат и пароль.</p>
+    </header>
+
+    <div class="top-row">
+        <div id="coinBalance" class="balance">Баланс: <span id="balanceAmount">0</span> 💠</div>
+    </div>
+
+    <nav>
+        <a href="index.html">Главная</a>
+        <a href="deposit.html">Пополнить</a>
+        <a href="withdraw.html">Вывести</a>
+        <a href="game.html">Играть</a>
+    </nav>
+
+    <div class="input-container">
+        <input type="text" id="codeInput" placeholder="Введите код (например, eyJyZWN...In0=-2747)">
+        <input type="password" id="passwordInput" placeholder="Введите пароль">
+        <button onclick="submitCode()">Отправить код</button>
+    </div>
+    <div id="result"></div>
+
+    <canvas id="confetti" class="confetti"></canvas>
+    <canvas id="snowCanvas" class="snow" aria-hidden="true"></canvas>
+
+    <script src="scripts.js"></script>
+    <script>
+        updateBalance();
+        try { safeSetMainButton('Отправить код', submitCode); } catch(e) { /* ignore */ }
+    </script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DenisCombat Roulette - Главная</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="top-decor">
+        <div class="garland" aria-hidden="true">
+            <span class="bulb">🎄</span>
+            <span class="bulb">✨</span>
+            <span class="bulb">🎁</span>
+            <span class="bulb">❄️</span>
+            <span class="bulb">🎆</span>
+        </div>
+    </div>
+
+    <header class="neon">
+        <h1>✨ DENKOIN ROULETTE</h1>
+        <p class="tag">Играй только на DenCoins.</p>
+    </header>
+
+    <div class="top-row">
+        <div id="coinBalance" class="balance">Баланс: <span id="balanceAmount">0</span> 💠</div>
+        <div class="home-cta"><a href="game.html" class="spin">Играть сейчас</a></div>
+    </div>
+
+    <nav>
+        <a href="index.html">Главная</a>
+        <a href="deposit.html">Пополнить</a>
+        <a href="withdraw.html">Вывести</a>
+        <a href="game.html">Играть</a>
+    </nav>
+
+    <p>Добро пожаловать в рулетку DenisCombat! Используйте свои Denis Coins, чтобы крутить рулетку и выигрывать награды. Это игровое приложение, не связанное с реальными деньгами.</p>
+
+    <canvas id="confetti" class="confetti"></canvas>
+    <canvas id="snowCanvas" class="snow" aria-hidden="true"></canvas>
+
+    <script src="scripts.js"></script>
+    <script>
+        updateBalance();
+        // безопасно установить MainButton для Telegram, если доступен
+        try { safeSetMainButton('Играть', () => location.href = 'game.html'); } catch(e) { /* ignore */ }
+    </script>
+</body>
+</html>
