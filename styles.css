@@ -58,6 +58,15 @@ footer{color:var(--muted); margin-top:20px}
 .coin-choice{padding:8px 12px; border-radius:8px; border:none; cursor:pointer; background:linear-gradient(90deg,#444,#222); color:#fff}
 .coin-choice.active{outline:3px solid rgba(255,255,255,0.06); box-shadow:0 6px 20px rgba(0,0,0,0.6)}
 
+/* Crash game */
+.crash-left{display:flex; flex-direction:column; align-items:center; gap:12px}
+.crash-mult{font-size:48px; font-weight:900; color:var(--neon2); text-shadow:0 6px 30px rgba(255,45,149,0.08); background:linear-gradient(90deg,#fff,rgba(255,255,255,0.1)); padding:12px 18px; border-radius:12px}
+#crashChart{border-radius:8px; background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+.cashout-note{font-size:12px; color:var(--muted); margin-top:6px}
+.spin.can-cash{ box-shadow:0 10px 28px rgba(255,215,0,0.12); border:1px solid rgba(255,215,0,0.12); animation:cashPulse 1.2s infinite; transform:scale(1.02); }
+@keyframes cashPulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+@media (max-width:600px){ .crash-mult{font-size:34px} }
+
 /* Slots */
 .slots-wrap{display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:10px}
 .reel{width:86px; height:86px; border-radius:10px; background:linear-gradient(90deg,#111,#1a1a2b); display:flex; align-items:center; justify-content:center; font-size:34px; box-shadow:0 8px 30px rgba(0,0,0,0.6)}

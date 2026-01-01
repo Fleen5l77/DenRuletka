@@ -19,7 +19,7 @@
     </div>
 
     <header class="neon">
-        <h1><span class="spark">✨</span> DENKOIN ROULETTE<span class="spark">✨</span></h1>
+        <h1><span class="spark">✨</span> DENKOIN ROULETTE <span class="spark">✨</span></h1>
     </header>
 
     <div class="top-row">
@@ -47,8 +47,8 @@
 
     <div class="game-selector">
         <button class="game-tab active" data-game="roulette">Рулетка</button>
-        <button class="game-tab" data-game="coinflip">Монетка</button>
         <button class="game-tab" data-game="slots">Слоты</button>
+        <button class="game-tab" data-game="crash">Краш</button>
     </div>
 
     <div class="game-area">
@@ -82,6 +82,23 @@
             <div class="side">
                 <button id="slotsButton" class="spin">КРУТИТЬ СЛОТЫ</button>
                 <div id="slotsResult" class="big-result">Попробуй сорвать джекпот!</div>
+            </div>
+        </div>
+
+        <div id="crashGame" class="game-panel hidden">
+            <div class="crash-left">
+                <div id="crashMultiplier" class="crash-mult">x1.00</div>
+                <canvas id="crashChart" width="400" height="120" style="max-width:100%; height:auto;" aria-hidden="true"></canvas>
+                <div class="charge-wrap" aria-hidden="true">
+                    <div class="charge-bar"><div class="charge-fill" id="crashChargeFill" style="width:0%"></div></div>
+                    <div class="rocket" id="crashRocket" aria-hidden="true">🚀</div>
+                </div>
+            </div>
+            <div class="side">
+                <button id="startCrashButton" class="spin">СТАРТ</button>
+                <button id="cashoutButton" class="spin" disabled>ЗАБРАТЬ</button>
+                <div id="crashResult" class="big-result">Сделай ставку и нажми СТАРТ</div>
+                <div class="cashout-note muted">Кнопка доступна с x1.3</div>
             </div>
         </div>
 

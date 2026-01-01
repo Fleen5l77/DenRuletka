@@ -40,6 +40,7 @@ function init() {
     setupGameTabs();
     setupCoinFlip();
     setupSlots();
+    setupCrash();
     window.addEventListener('resize', resizeConfetti);
     window.addEventListener('resize', resizeRoulette);
     window.addEventListener('resize', resizeSnow);
@@ -96,8 +97,22 @@ function setupGameTabs(){
     });
 }
 function switchGame(name){
+    // if leaving crash while a round is running, end it
+    if (name !== 'crash' && crashRunning) {
+        const el = document.getElementById('crashMultiplier');
+        const last = el ? parseFloat(el.innerText.replace('x','')) || 1 : 1;
+        endCrash(false, last);
+    }
+
     document.querySelectorAll('.game-panel').forEach(p=> p.classList.toggle('hidden', p.id !== name + 'Game'));
     document.querySelectorAll('.game-tab').forEach(t=> t.classList.toggle('active', t.dataset.game === name));
+
+    // enable/disable start for crash based on balance
+    if (name === 'crash') {
+        const startBtn = document.getElementById('startCrashButton');
+        if (startBtn) startBtn.disabled = coinBalance <= 0;
+    }
+
     if(name === 'roulette') { if (canvas && ctx) drawRoulette(); }
 }
 
@@ -172,6 +187,130 @@ function evaluateSlots(stops, bet){
     if (resultDiv) resultDiv.innerText = payout ? `Вы выиграли ${payout} DenKoin!` : `Вы проиграли ${bet} DenKoin.`;
     updateBalance();
 }
+
+// --- CRASH GAME ---
+let crashRunning = false;
+let crashTarget = 0;
+let crashStartTime = 0;
+let crashAnimId = null;
+let currentCrashBet = 0;
+let cashedOut = false;
+
+function setupCrash(){
+    const start = document.getElementById('startCrashButton');
+    const cash = document.getElementById('cashoutButton');
+    if (start) start.addEventListener('click', startCrash);
+    if (cash) cash.addEventListener('click', cashOutCrash);
+    // ensure cashout disabled initially and visible
+    if (cash) { cash.disabled = true; cash.classList.remove('hidden'); }
+}
+
+function getCrashPoint(){
+    // повышаем вероятность разумно: чуть меньше мгновенных крашей, больше средних мультипликаторов
+    const r = Math.random();
+    if (r < 0.40) return Math.round((1 + Math.random() * 0.22) * 100) / 100; // 1.00 - 1.29 (common)
+    if (r < 0.82) return Math.round((1.3 + Math.random() * 0.8) * 100) / 100; // 1.30 - 2.00 (увеличено)
+    if (r < 0.97) return Math.round((2.0 + Math.random() * 3.0) * 100) / 100; // 2.00 - 4.00
+    return Math.round((4.0 + Math.random() * 6.0) * 100) / 100; // редкие большие множители
+}
+
+function startCrash(){
+    if (crashRunning) return;
+    const bet = Math.max(1, Math.floor(parseInt(document.getElementById('betInput').value || '1', 10)));
+    if (bet > coinBalance) { showAlert('Недостаточно монет!'); return; }
+    coinBalance -= bet; localStorage.setItem('coinBalance', coinBalance); updateBalance();
+    currentCrashBet = bet;
+    crashTarget = getCrashPoint();
+    crashRunning = true; cashedOut = false;
+    crashStartTime = performance.now();
+    document.getElementById('startCrashButton').disabled = true;
+    const cashBtn = document.getElementById('cashoutButton');
+    if (cashBtn) { cashBtn.disabled = true; cashBtn.classList.remove('can-cash'); cashBtn.classList.remove('hidden'); }
+    // reset charge visuals
+    const fillEl = document.getElementById('crashChargeFill');
+    const rocketEl = document.getElementById('crashRocket');
+    if (fillEl) fillEl.style.width = '0%';
+    if (rocketEl) { rocketEl.classList.remove('crashed'); rocketEl.style.transform = 'translateY(0)'; }
+    document.getElementById('crashResult').innerText = 'Идет раунд... удачи!';
+    requestAnimationFrame(crashLoop);
+}
+
+function crashLoop(now){
+    if (!crashRunning) return;
+    const elapsed = (now - crashStartTime) / 1000;
+    // exponential growth — tuned for visible acceleration
+    const mult = Math.exp(0.6 * elapsed);
+    const display = Math.max(1, mult);
+    const el = document.getElementById('crashMultiplier');
+    if (el) el.innerText = `x${display.toFixed(2)}`;
+    // update charge bar and rocket position relative to crashTarget
+    const fillEl = document.getElementById('crashChargeFill');
+    const rocketEl = document.getElementById('crashRocket');
+    let pct = 0;
+    if (crashTarget > 1) pct = Math.min(1, (display - 1) / (crashTarget - 1));
+    else pct = 1;
+    if (fillEl) fillEl.style.width = `${Math.floor(pct*100)}%`;
+    if (rocketEl) rocketEl.style.transform = `translateY(${Math.floor((1 - pct) * 6)}px)`;
+
+    // enable cashout only after x1.3
+    const cashBtn = document.getElementById('cashoutButton');
+    if (display >= 1.3) {
+        if (cashBtn && cashBtn.disabled) {
+            cashBtn.disabled = false;
+            cashBtn.classList.add('can-cash');
+        }
+    } else {
+        if (cashBtn && !cashBtn.disabled) {
+            cashBtn.disabled = true;
+            cashBtn.classList.remove('can-cash');
+        }
+    }
+    if (display >= crashTarget){
+        // crashed: snap visuals
+        if (fillEl) fillEl.style.width = '100%';
+        if (rocketEl) rocketEl.classList.add('crashed');
+        endCrash(false, display);
+        return;
+    }
+    crashAnimId = requestAnimationFrame(crashLoop);
+}
+
+function cashOutCrash(){
+    if (!crashRunning || cashedOut) return;
+    const el = document.getElementById('crashMultiplier');
+    const currentMult = parseFloat((el && el.innerText.replace('x','')) || '1') || 1;
+    if (currentMult < 1.3) { showAlert('Забрать можно только с коэффициентом x1.3 или выше'); return; }
+    const payout = Math.floor(currentCrashBet * currentMult);
+    coinBalance += payout; localStorage.setItem('coinBalance', coinBalance); updateBalance();
+    cashedOut = true; crashRunning = false;
+    cancelAnimationFrame(crashAnimId);
+    document.getElementById('crashResult').innerText = `Вы забрали ${payout} DenKoin (x${currentMult.toFixed(2)})`;
+    playWin(); triggerWinEffect(); safeHaptic('medium');
+    const cashBtn = document.getElementById('cashoutButton'); if (cashBtn) { cashBtn.disabled = true; cashBtn.classList.remove('can-cash'); }
+    document.getElementById('startCrashButton').disabled = coinBalance <= 0;
+    pushHistory({ time: Date.now(), game:'crash', bet: currentCrashBet, reward: `x${currentMult.toFixed(2)}`, delta: payout });
+}
+
+function endCrash(won, lastMult){
+    crashRunning = false;
+    cancelAnimationFrame(crashAnimId);
+    const cashBtn = document.getElementById('cashoutButton'); if (cashBtn) { cashBtn.disabled = true; cashBtn.classList.remove('can-cash'); }
+    document.getElementById('startCrashButton').disabled = coinBalance <= 0 ? true : false;
+    if (!cashedOut){
+        // nobody cashed out — loss
+        document.getElementById('crashResult').innerText = `КРАШ на x${lastMult.toFixed(2)} — вы потеряли ${currentCrashBet} DenKoin`;
+        playLose(); triggerLoseEffect(); safeHaptic('light');
+        pushHistory({ time: Date.now(), game:'crash', bet: currentCrashBet, reward: `x${lastMult.toFixed(2)}`, delta: 0 });
+    }
+    // reset multiplier display to at least show crash point for a moment
+    const el = document.getElementById('crashMultiplier'); if (el) el.innerText = `x${Math.max(1,lastMult).toFixed(2)}`;
+    const rocketEl = document.getElementById('crashRocket');
+    if (rocketEl) {
+        rocketEl.classList.add('crashed');
+        setTimeout(()=>{ rocketEl.classList.remove('crashed'); if (rocketEl) rocketEl.style.transform = 'translateY(0)'; }, 800);
+    }
+}
+
 
 // Draw roulette wheel
 function drawRoulette() {
