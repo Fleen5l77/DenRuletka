@@ -195,6 +195,7 @@ let crashStartTime = 0;
 let crashAnimId = null;
 let currentCrashBet = 0;
 let cashedOut = false;
+let crashFallbackIntervalId = null; 
 
 function setupCrash(){
     const start = document.getElementById('startCrashButton');
@@ -232,47 +233,66 @@ function startCrash(){
     if (fillEl) fillEl.style.width = '0%';
     if (rocketEl) { rocketEl.classList.remove('crashed'); rocketEl.style.transform = 'translateY(0)'; }
     document.getElementById('crashResult').innerText = 'Идет раунд... удачи!';
-    requestAnimationFrame(crashLoop);
+    try {
+        requestAnimationFrame(crashLoop);
+        // fallback for environments where rAF may be throttled or unavailable (Telegram WebView)
+        if (crashFallbackIntervalId) clearInterval(crashFallbackIntervalId);
+        crashFallbackIntervalId = setInterval(()=>{ if (crashRunning) { try { crashLoop(performance.now()); } catch(e){ console.error('Crash fallback loop error', e); } } }, 120);
+    } catch (e) {
+        console.error('Failed to start crash loop', e);
+        // refund bet
+        coinBalance += bet; localStorage.setItem('coinBalance', coinBalance); updateBalance();
+        crashRunning = false;
+        document.getElementById('startCrashButton').disabled = coinBalance <= 0;
+        showAlert('Не удалось запустить раунд: ограничение среды выполнения. Попробуйте ещё раз.');
+    }
 }
 
 function crashLoop(now){
-    if (!crashRunning) return;
-    const elapsed = (now - crashStartTime) / 1000;
-    // exponential growth — tuned for visible acceleration
-    const mult = Math.exp(0.6 * elapsed);
-    const display = Math.max(1, mult);
-    const el = document.getElementById('crashMultiplier');
-    if (el) el.innerText = `x${display.toFixed(2)}`;
-    // update charge bar and rocket position relative to crashTarget
-    const fillEl = document.getElementById('crashChargeFill');
-    const rocketEl = document.getElementById('crashRocket');
-    let pct = 0;
-    if (crashTarget > 1) pct = Math.min(1, (display - 1) / (crashTarget - 1));
-    else pct = 1;
-    if (fillEl) fillEl.style.width = `${Math.floor(pct*100)}%`;
-    if (rocketEl) rocketEl.style.transform = `translateY(${Math.floor((1 - pct) * 6)}px)`;
+    try {
+        if (!crashRunning) return;
+        if (typeof now !== 'number') now = performance.now();
+        const elapsed = (now - crashStartTime) / 1000;
+        // exponential growth — tuned for visible acceleration
+        const mult = Math.exp(0.6 * elapsed);
+        const display = Math.max(1, mult);
+        const el = document.getElementById('crashMultiplier');
+        if (el) el.innerText = `x${display.toFixed(2)}`;
+        // update charge bar and rocket position relative to crashTarget
+        const fillEl = document.getElementById('crashChargeFill');
+        const rocketEl = document.getElementById('crashRocket');
+        let pct = 0;
+        if (crashTarget > 1) pct = Math.min(1, (display - 1) / (crashTarget - 1));
+        else pct = 1;
+        if (fillEl) fillEl.style.width = `${Math.floor(pct*100)}%`;
+        if (rocketEl) rocketEl.style.transform = `translateY(${Math.floor((1 - pct) * 6)}px)`;
 
-    // enable cashout only after x1.3
-    const cashBtn = document.getElementById('cashoutButton');
-    if (display >= 1.3) {
-        if (cashBtn && cashBtn.disabled) {
-            cashBtn.disabled = false;
-            cashBtn.classList.add('can-cash');
+        // enable cashout only after x1.3
+        const cashBtn = document.getElementById('cashoutButton');
+        if (display >= 1.3) {
+            if (cashBtn && cashBtn.disabled) {
+                cashBtn.disabled = false;
+                cashBtn.classList.add('can-cash');
+            }
+        } else {
+            if (cashBtn && !cashBtn.disabled) {
+                cashBtn.disabled = true;
+                cashBtn.classList.remove('can-cash');
+            }
         }
-    } else {
-        if (cashBtn && !cashBtn.disabled) {
-            cashBtn.disabled = true;
-            cashBtn.classList.remove('can-cash');
+        if (display >= crashTarget){
+            // crashed: snap visuals
+            if (fillEl) fillEl.style.width = '100%';
+            if (rocketEl) rocketEl.classList.add('crashed');
+            endCrash(false, display);
+            return;
         }
+        crashAnimId = requestAnimationFrame(crashLoop);
+    } catch (e) {
+        console.error('Crash loop error', e);
+        const lastMult = parseFloat((document.getElementById('crashMultiplier')||{innerText:'x1'}).innerText.replace('x','')) || 1;
+        endCrash(false, lastMult);
     }
-    if (display >= crashTarget){
-        // crashed: snap visuals
-        if (fillEl) fillEl.style.width = '100%';
-        if (rocketEl) rocketEl.classList.add('crashed');
-        endCrash(false, display);
-        return;
-    }
-    crashAnimId = requestAnimationFrame(crashLoop);
 }
 
 function cashOutCrash(){
@@ -284,6 +304,7 @@ function cashOutCrash(){
     coinBalance += payout; localStorage.setItem('coinBalance', coinBalance); updateBalance();
     cashedOut = true; crashRunning = false;
     cancelAnimationFrame(crashAnimId);
+    if (crashFallbackIntervalId) { clearInterval(crashFallbackIntervalId); crashFallbackIntervalId = null; }
     document.getElementById('crashResult').innerText = `Вы забрали ${payout} DenKoin (x${currentMult.toFixed(2)})`;
     playWin(); triggerWinEffect(); safeHaptic('medium');
     const cashBtn = document.getElementById('cashoutButton'); if (cashBtn) { cashBtn.disabled = true; cashBtn.classList.remove('can-cash'); }
@@ -294,6 +315,7 @@ function cashOutCrash(){
 function endCrash(won, lastMult){
     crashRunning = false;
     cancelAnimationFrame(crashAnimId);
+    if (crashFallbackIntervalId) { clearInterval(crashFallbackIntervalId); crashFallbackIntervalId = null; }
     const cashBtn = document.getElementById('cashoutButton'); if (cashBtn) { cashBtn.disabled = true; cashBtn.classList.remove('can-cash'); }
     document.getElementById('startCrashButton').disabled = coinBalance <= 0 ? true : false;
     if (!cashedOut){
@@ -599,11 +621,17 @@ function resizeSnow(){
 function resizeRoulette(){
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const size = Math.min(rect.width, window.innerWidth * 0.9);
+    let size = Math.min(rect.width || (window.innerWidth * 0.5), window.innerWidth * 0.9);
+    if (!size || size < 50) {
+        // canvas may be hidden or zero-sized (tabs). fallback to parent width or sane default
+        const parent = canvas.parentElement || document.body;
+        const parentWidth = parent.clientWidth || window.innerWidth;
+        size = Math.min(360, Math.max(200, parentWidth * 0.6, window.innerWidth * 0.45));
+    }
     // set device pixels for crispness
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.floor(size * dpr);
-    canvas.height = Math.floor(size * dpr);
+    canvas.width = Math.max(1, Math.floor(size * dpr));
+    canvas.height = Math.max(1, Math.floor(size * dpr));
     canvas.style.width = `${Math.floor(size)}px`;
     canvas.style.height = `${Math.floor(size)}px`;
     if (ctx) {
