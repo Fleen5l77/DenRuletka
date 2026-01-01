@@ -97,7 +97,6 @@ function setupGameTabs(){
     });
 }
 function switchGame(name){
-    // if leaving crash while a round is running, end it
     if (name !== 'crash' && crashRunning) {
         const el = document.getElementById('crashMultiplier');
         const last = el ? parseFloat(el.innerText.replace('x','')) || 1 : 1;
@@ -107,7 +106,6 @@ function switchGame(name){
     document.querySelectorAll('.game-panel').forEach(p=> p.classList.toggle('hidden', p.id !== name + 'Game'));
     document.querySelectorAll('.game-tab').forEach(t=> t.classList.toggle('active', t.dataset.game === name));
 
-    // enable/disable start for crash based on balance
     if (name === 'crash') {
         const startBtn = document.getElementById('startCrashButton');
         if (startBtn) startBtn.disabled = coinBalance <= 0;
@@ -195,7 +193,11 @@ let crashStartTime = 0;
 let crashAnimId = null;
 let currentCrashBet = 0;
 let cashedOut = false;
-let crashFallbackIntervalId = null; 
+let crashFallbackIntervalId = null;
+// Lower value => slower multiplier growth (keeps crash point distribution unchanged)
+const CRASH_GROWTH_RATE = 0.365; // base growth constant
+// Visual time scale — controls how fast the multiplier visually grows (lower = slower)
+let DISPLAY_TIME_SCALE = 0.365; // tweak this to slow down visual growth without changing distribution 
 
 function setupCrash(){
     const start = document.getElementById('startCrashButton');
@@ -253,8 +255,9 @@ function crashLoop(now){
         if (!crashRunning) return;
         if (typeof now !== 'number') now = performance.now();
         const elapsed = (now - crashStartTime) / 1000;
-        // exponential growth — tuned for visible acceleration
-        const mult = Math.exp(0.6 * elapsed);
+        // exponential growth — apply DISPLAY_TIME_SCALE to slow visual growth
+        const visualElapsed = elapsed * DISPLAY_TIME_SCALE;
+        const mult = Math.exp(CRASH_GROWTH_RATE * visualElapsed);
         const display = Math.max(1, mult);
         const el = document.getElementById('crashMultiplier');
         if (el) el.innerText = `x${display.toFixed(2)}`;
@@ -536,6 +539,33 @@ function safeSetMainButton(text, onClick){
     } catch(e) { /* ignore */ }
 }
 
+// Copy to clipboard helper with fallbacks
+async function copyTextToClipboard(text){
+    if (!text) return Promise.reject(new Error('Empty text'));
+    // try navigator.clipboard first
+    try {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            await navigator.clipboard.writeText(text);
+            return;
+        }
+    } catch(e){ /* continue to fallback */ }
+    // fallback using textarea + execCommand
+    return new Promise((resolve, reject) => {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            ta.setSelectionRange(0, ta.value.length);
+            const ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            if (ok) resolve(); else reject(new Error('execCommand failed'));
+        } catch (err) { reject(err); }
+    });
+}
+
 // Visual effects: confetti
 let confettiParticles = [];
 function setupConfetti() {
@@ -791,7 +821,26 @@ function withdrawCoins() {
     coinBalance -= amount;
     localStorage.setItem('coinBalance', coinBalance);
     updateBalance();
-    resultDiv.innerText = `Ваш код для вывода: ${code}`;
-    showAlert(`Код для вывода: ${code}`);
+    resultDiv.innerHTML = `<div class="withdraw-area" aria-live="polite">Ваш код для вывода: <span class="withdraw-code" id="withdrawCode">${code}</span> <button id="copyWithdrawBtn" class="copy-btn">Копировать</button></div>`;
+    // show a lightweight alert for quick visibility
+    try { showAlert(`Код для вывода: ${code}`); } catch(e){}
     safeHaptic('medium');
+
+    // attach copy handler
+    setTimeout(()=>{
+        const btn = document.getElementById('copyWithdrawBtn');
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+            try {
+                await copyTextToClipboard(code);
+                const prev = btn.innerText;
+                btn.innerText = 'Скопировано';
+                btn.disabled = true;
+                setTimeout(()=>{ btn.innerText = prev; btn.disabled = false; }, 1500);
+            } catch (err) {
+                console.error('Copy failed', err);
+                showAlert('Не удалось скопировать код в буфер обмена.');
+            }
+        });
+    }, 30);
 }
